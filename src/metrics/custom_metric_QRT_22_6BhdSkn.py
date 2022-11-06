@@ -9,27 +9,30 @@ import pandas as pd
 def transform_submission_to_ypred(A : np.ndarray, 
                                   beta : np.ndarray, 
                                   X_test : pd.DataFrame, 
-                                  y_test: pd.DataFrame):
+                                  y_test: pd.DataFrame,
+                                  X_test_reshape : pd.DataFrame = None,):
 
     """ Transform submission output (A, beta) into predicted returns S_t."""
-    df_A_beta = np.hstack( (np.hstack([A.T, beta.reshape((10, 1))])).T )
+    # df_A_beta = np.hstack( (np.hstack([A.T, beta.reshape((10, 1))])).T )
     
-    A = df_A_beta[:-10].reshape((250, 10))
-    beta = df_A_beta[-10:].reshape(10)
+    # A = df_A_beta[:-10].reshape((250, 10))
+    # beta = df_A_beta[-10:].reshape(10)
 
-    E = pd.DataFrame(A.T @ A - np.eye(10)).abs()  
+    # E = pd.DataFrame(A.T @ A - np.eye(10)).abs()  
 
-    # check orthogonality of A
-    if any(E.unstack() > 1e-6): 
-        return None
+    # # check orthogonality of A
+    # if any(E.unstack() > 1e-6): 
+    #     return None
 
-    x_test = X_test.T
-    y_test = X_test.T
+    if X_test_reshape is None:
+        x_test = X_test.T
+        y_test = X_test.T
 
-    x_test = x_test[y_test.columns]
+        x_test = x_test[y_test.columns]
 
-    x_test_reshape = pd.concat([x_test.shift(i+1).stack(dropna=False) for i in range(250)], 1).dropna()
-    y_pred = (x_test_reshape @ A @ beta).unstack()
+        X_test_reshape = pd.concat([x_test.shift(i+1).stack(dropna=False) for i in range(250)], 1).dropna()
+
+    y_pred = (X_test_reshape @ A @ beta).unstack()
 
     return y_pred.T
 
